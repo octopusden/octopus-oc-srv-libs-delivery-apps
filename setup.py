@@ -3,7 +3,7 @@ from setuptools import setup
 import glob
 import os
 
-__version = "1.0.0"
+__version = "11.2.1"
 
 spec = {
     "name": "oc-delivery-apps",
