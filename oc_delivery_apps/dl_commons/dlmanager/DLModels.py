@@ -26,7 +26,7 @@ class Delivery(object):
         return self.gav
 
     def __set_who(self, who=None):
-        if who != None:
+        if who is not None:
             self.request_by = who
         self.request_date = datetime.datetime.now(pytz.utc)
         self.comment=self.get_flags_description()

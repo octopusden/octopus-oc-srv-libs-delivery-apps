@@ -31,15 +31,15 @@ class Command(base.BaseCommand):
         in_this_period=Delivery.objects.filter(creation_date__range=(date_from, date_to))
         in_this_period_notnull=in_this_period.filter(request_date__isnull=False, )
 
-        print "shifts found: ", len(shifted.all())
-        print "total: ", len(Delivery.objects.all())        
-        print "Shift period:", date_from, "...", date_to
-        print "In this period total:", len(in_this_period)
-        print "In this period with request_date!=null:", len(in_this_period_notnull)
+        print ("shifts found: ", len(shifted.all()))
+        print ("total: ", len(Delivery.objects.all()))        
+        print ("Shift period:", date_from, "...", date_to)
+        print ("In this period total:", len(in_this_period))
+        print ("In this period with request_date!=null:", len(in_this_period_notnull))
 
         if not kwargs.get("dry_run", False):
             in_this_period.update(request_date=F("request_date")+datetime.timedelta(hours=3))
-            print "Dates fixed"
+            print ("Dates fixed")
 
         return
 

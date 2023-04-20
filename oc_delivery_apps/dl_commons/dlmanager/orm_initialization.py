@@ -11,5 +11,4 @@ used_apps=["dlmanager",
 
 def configure_dlmanager_orm(conn_mgr, **additional_settings):
     """ Shortcut for calling ORMConfigurator.configure_django_orm with proper params """
-    ORMConfigurator.configure_django_orm(conn_mgr, INSTALLED_APPS=used_apps,
-					 **additional_settings)
+    ORMConfigurator.configure_django_orm(conn_mgr, INSTALLED_APPS=used_apps,**additional_settings)
