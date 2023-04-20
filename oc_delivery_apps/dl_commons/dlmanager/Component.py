@@ -35,20 +35,20 @@ class Component(object):
                 for item in cls.get_all_components()];  
 
     @classmethod
-    def _get_regexp_list( self, obj_component ) :
-    obj_loc_type = models.LocTypes.objects.get( code = "NXS" );
+    def _get_regexp_list( self, obj_component ):
+        obj_loc_type = models.LocTypes.objects.get( code = "NXS" );
 
-    ls_regexp = list();
-    for obj_regexp in models.CiRegExp.objects.filter( loc_type = obj_loc_type, ci_type = obj_component ) :
-        if ( obj_regexp.regexp is not None and len( obj_regexp.regexp ) > 0 ):
-            ls_regexp.append( obj_regexp.regexp );
+        ls_regexp = list();
+        for obj_regexp in models.CiRegExp.objects.filter( loc_type = obj_loc_type, ci_type = obj_component ) :
+            if ( obj_regexp.regexp is not None and len( obj_regexp.regexp ) > 0 ):
+                ls_regexp.append( obj_regexp.regexp );
 
-    return ls_regexp;
+        return ls_regexp;
 
     @classmethod
     def get_component( self, str_code ):
         obj_component = models.CiTypes.objects.get( code = str_code );
-    return Component( obj_component.code, obj_component.name, self._get_regexp_list( obj_component ) );
+        return Component( obj_component.code, obj_component.name, self._get_regexp_list( obj_component ) );
 
     @classmethod
     def get_all_components(self, cls):
@@ -56,13 +56,13 @@ class Component(object):
         components=[];
 
         #get CiTypes (components) list
-    for obj_component in models.CiTypes.objects.all().order_by( '-is_standard', 'name' ):
-        components.append( Component ( obj_component.code, obj_component.name, cls._get_regexp_list( obj_component ) ) );
+        for obj_component in models.CiTypes.objects.all().order_by( '-is_standard', 'name' ):
+            components.append( Component ( obj_component.code, obj_component.name, cls._get_regexp_list( obj_component ) ) );
 
-    # a little trick: 'FILE' is to be a first value in the list
-    obj_component = components [ map( lambda x: x.short_name == "FILE", components ).index( True ) ];
-    components.remove( obj_component );
-    components.insert( 0, obj_component );
+        # a little trick: 'FILE' is to be a first value in the list
+        obj_component = components [ map( lambda x: x.short_name == "FILE", components ).index( True ) ];
+        components.remove( obj_component );
+        components.insert( 0, obj_component );
 
-    return components;
+        return components;
 
