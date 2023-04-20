@@ -15,12 +15,20 @@ spec = {
     "packages": [
         "oc_delivery_apps",
         "oc_delivery_apps.checksums",
-        "oc_delivery_apps.dlcontents"],
+        "oc_delivery_apps.dlcontents",
+        "oc_delivery_apps.dl_commons",
+        "oc_delivery_apps.dl_commons.dlmanager",
+        "oc_delivery_apps.dl_commons.dlinterface",
+        "oc_delivery_apps.dl_commons.django_tests"
+    ],
     "install_requires": [
+        "fs",
         "oc-sql-helpers >= 1.0.0",
+        "oc-cdtapi",
         "python-magic",
         "oc-orm-initializator",
         "sqlparse",
+        "configobj"
     ],
     "python_requires": ">=3.6"
 }

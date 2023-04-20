@@ -25,7 +25,7 @@ class CiTypes(models.Model):
         """
         Returns GAV of release notes of given version if artifactid is known, None otherwise
         """
-        
+
         if any([not self.rn_artifactid, not version]):
             return None
 
