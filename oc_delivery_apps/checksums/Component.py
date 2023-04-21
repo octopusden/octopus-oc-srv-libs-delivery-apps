@@ -33,14 +33,17 @@ class Component(object):
         _regexps = list(filter(lambda x: bool(x) and isinstance(x, str), _regexps))
         return _regexps
 
-def get_all_components(self, cls):
-    # load components from database
-    # little trick: 'FILE' is to be first in the list
-    # we should raise an exception if no such type in the database, so do not catch it
-    _file = models.CiTypes.objects.get(code="FILE")
-    _result = list(map(lambda x: x), models.CiTypes.objects.filter(code__ne=="FILE").order_by('-is_standard', 'name')))
-    _result = [_file] + list(map(lambda x: Component(x), _result))
-    return _result
+    @staticmethod
+    def get_all_components():
+        # load components from database
+        # little trick: 'FILE' is to be first in the list
+        # we should raise an exception if no such type in the database, so do not catch it
+        _file = models.CiTypes.objects.get(code="FILE")
+        _result = list(map(lambda x: Component(x),
+            models.CiTypes.objects.exclude(code="FILE").order_by('-is_standard', 'name')))
+        _result.insert(0, Component(_file))
+        return _result
 
-def get_all_names(cls):
-    return [(item.short_name, item.full_name) for item in get_all_components()]
+    @staticmethod
+    def get_all_names():
+        return [(item.short_name, item.full_name) for item in Component.get_all_components()]
