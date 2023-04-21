@@ -88,8 +88,8 @@ class DeliveryListTestSuite(django.test.SimpleTestCase):
 
     def test_russian_symbols_processed(self):
         # actually it is a problem only if non-latin chars are passed
-        _non_lating_str = 'что-нибудь-не-латинское'
-        dlist = DeliveryList([rus_str, ])
+        _non_latin_str = 'что-нибудь-не-латинское'
+        dlist = DeliveryList([_non_latin_str, ])
         self.assertEqual(["что-нибудь-не-латинское", ], dlist.svn_files)
 
 
