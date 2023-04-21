@@ -14,7 +14,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='jiraprojects',
             name='code',
-            field=models.CharField(max_length=255, unique=True, null=True, blank=True),
+            field=models.CharField(
+                max_length=255, unique=True, null=True, blank=True),
         ),
         migrations.AlterField(
             model_name='jiraprojects',

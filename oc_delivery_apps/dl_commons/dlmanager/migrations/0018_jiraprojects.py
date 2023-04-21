@@ -14,7 +14,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='JiraProjects',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID',
+                 serialize=False, auto_created=True, primary_key=True)),
                 ('code', models.CharField(max_length=255)),
                 ('int_url', models.CharField(max_length=255)),
                 ('ext_url', models.CharField(max_length=255)),

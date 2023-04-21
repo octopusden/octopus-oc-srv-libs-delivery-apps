@@ -9,7 +9,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 
 DEBUG = True
-SECRET_KEY="key"
+SECRET_KEY = "key"
 
 
 INSTALLED_APPS = (
@@ -24,19 +24,19 @@ INSTALLED_APPS = (
 MIDDLEWARE_CLASSES = ()
 
 
-conn_mgr=ConnectionManager()
-db_url, db_user, db_password=conn_mgr.get_credentials_group("PSQL", ["URL", "USER",
-                                                                               "PASSWORD"])
-db_host, db_port, db_name, db_options=ConnectionManager.parse_conn_url(db_url)
+conn_mgr = ConnectionManager()
+db_url, db_user, db_password = conn_mgr.get_credentials_group("PSQL", ["URL", "USER",
+                                                                       "PASSWORD"])
+db_host, db_port, db_name, db_options = ConnectionManager.parse_conn_url(
+    db_url)
 DATABASES = {
-        "default":{
-                "ENGINE": "django.db.backends.postgresql_psycopg2",
-                "NAME": db_name,
-                "USER": db_user, 
-                "PASSWORD": db_password,
-                "HOST": db_host, 
-                "PORT": db_port, 
-                "OPTIONS":{ "options": "-c %s" % db_options  },
-        },
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": db_name,
+        "USER": db_user,
+        "PASSWORD": db_password,
+        "HOST": db_host,
+        "PORT": db_port,
+        "OPTIONS": {"options": "-c %s" % db_options},
+    },
 }
-

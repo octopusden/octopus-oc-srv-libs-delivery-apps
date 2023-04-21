@@ -14,9 +14,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='FtpUploadClientOptions',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID',
+                 serialize=False, auto_created=True, primary_key=True)),
                 ('should_encrypt', models.BooleanField(default=True)),
-                ('client', models.OneToOneField(to='dlmanager.Client', on_delete=models.CASCADE)),
+                ('client', models.OneToOneField(
+                    to='dlmanager.Client', on_delete=models.CASCADE)),
             ],
         ),
         migrations.RemoveField(
