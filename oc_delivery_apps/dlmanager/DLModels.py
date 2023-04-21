@@ -9,6 +9,7 @@ from oc_cdtapi.NexusAPI import parse_gav
 from fs.path import normpath
 from fs.errors import IllegalBackReference
 import posixpath
+from django.db import models
 
 
 class Delivery(models.Model):
