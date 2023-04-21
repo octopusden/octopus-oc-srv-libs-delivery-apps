@@ -1,7 +1,7 @@
 # coding: utf-8 --*
 from django import test
-from oc_delivery_apps.dl_commons.dlmanager.DLModels import DeliveryList, InvalidPathError
-from oc_delivery_apps.dl_commons.dlmanager.models import Delivery, Client, FtpUploadClientOptions
+from oc_delivery_apps.dlmanager.DLModels import DeliveryList, InvalidPathError
+from oc_delivery_apps.dlmanager.models import Delivery, Client, FtpUploadClientOptions
 
 
 class DeliveryListTestSuite(test.SimpleTestCase):

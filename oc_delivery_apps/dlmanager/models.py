@@ -1,14 +1,13 @@
 """ Description of Django database models related to delivery infrastructure """
 
 
-from __future__ import unicode_literals
 import datetime
 from configobj import ConfigObj
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from simple_history.models import HistoricalRecords
-from oc_delivery_apps.dl_commons.dlmanager import DLModels
+from oc_delivery_apps.dlmanager import DLModels
 
 
 class UserAwareHistoricalRecords(HistoricalRecords):
