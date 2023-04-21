@@ -16,9 +16,7 @@ spec = {
         "oc_delivery_apps",
         "oc_delivery_apps.checksums",
         "oc_delivery_apps.dlcontents",
-        "oc_delivery_apps.dl_commons",
-        "oc_delivery_apps.dl_commons.dlmanager",
-        "oc_delivery_apps.dl_commons.dlinterface"
+        "oc_delivery_apps.dlmanager",
     ],
     "install_requires": [
         "fs",
