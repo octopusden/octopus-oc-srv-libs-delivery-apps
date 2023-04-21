@@ -16,15 +16,8 @@ class Component(object):
         return [self.preprocess_template(stub, version)
                 for stub in self.stubs]
 
-    #placeholders cancelled since they give no flexibility in regexp
-    #_VERSION_ is the only one left
     def preprocess_template(self, stub, version):
-        placeholders={ #".": "\.", # in stub dot means exactly dot
-                       #"_CLIENT_": "[A-Z0-9_]+?",
-                       #"_BRANCHES_": "branches-[a-zA-Z0-9_\-]+?",
-                       "_VERSION_": version,
-                       #"_ANY_": "[a-zA-Z0-9_\-]+?",
-        }
+        placeholders={"_VERSION_": version}
         template = stub
         for ph in placeholders.keys():
             template=template.replace(ph, placeholders[ph])
@@ -34,23 +27,20 @@ class Component(object):
         return [(item.short_name, item.full_name)
                 for item in cls.get_all_components()];  
 
-    @classmethod
-    def _get_regexp_list( self, obj_component ):
-        obj_loc_type = models.LocTypes.objects.get( code = "NXS" );
+    def _get_regexp_list(self, component):
+        obj_loc_type = models.LocTypes.objects.get(code = "NXS")
 
-        ls_regexp = list();
-        for obj_regexp in models.CiRegExp.objects.filter( loc_type = obj_loc_type, ci_type = obj_component ) :
+        ls_regexp = list()
+        for obj_regexp in models.CiRegExp.objects.filter(loc_type=_loc_type, ci_type=component):
             if ( obj_regexp.regexp is not None and len( obj_regexp.regexp ) > 0 ):
                 ls_regexp.append( obj_regexp.regexp );
 
         return ls_regexp;
 
-    @classmethod
     def get_component( self, str_code ):
         obj_component = models.CiTypes.objects.get( code = str_code );
         return Component( obj_component.code, obj_component.name, self._get_regexp_list( obj_component ) );
 
-    @classmethod
     def get_all_components(self, cls):
         #load components from database
         components=[];

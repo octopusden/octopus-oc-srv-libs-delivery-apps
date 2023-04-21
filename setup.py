@@ -18,8 +18,7 @@ spec = {
         "oc_delivery_apps.dlcontents",
         "oc_delivery_apps.dl_commons",
         "oc_delivery_apps.dl_commons.dlmanager",
-        "oc_delivery_apps.dl_commons.dlinterface",
-        "oc_delivery_apps.dl_commons.django_tests"
+        "oc_delivery_apps.dl_commons.dlinterface"
     ],
     "install_requires": [
         "fs",
