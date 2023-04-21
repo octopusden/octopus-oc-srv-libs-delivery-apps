@@ -25,7 +25,8 @@ spec = {
         "python-magic",
         "oc-orm-initializator",
         "sqlparse",
-        "configobj"
+        "configobj",
+        "pytz"
     ],
     "python_requires": ">=3.6"
 }

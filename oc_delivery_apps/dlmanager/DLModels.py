@@ -5,12 +5,13 @@ import datetime
 from configobj import ConfigObj
 import re
 import pytz
-from oc_cdtapi import NexusAPI
+from oc_cdtapi.NexusAPI import parse_gav
 from fs.path import normpath
 from fs.errors import IllegalBackReference
+import posixpath
 
 
-class Delivery(object):
+class Delivery(models.Model):
     """ Represents a set of files sent to client and saved under specific gav.
     Previously was used on its own but now all the work is done via dlmanager.models.Delivery subclass
     """
@@ -72,7 +73,7 @@ class Delivery(object):
         }
         return code_statuses.get(code, "Invalid status")
 
-    class Meta:  # TODO: find out why this meta does not work in inheritance
+    class Meta:
         db_table = 'deliveries'
         abstract = True
 
@@ -83,52 +84,50 @@ class InvalidPathError(Exception):
 
 class DeliveryList(object):
     """ Represents list of files included in delivery """
-    svn_files = property(lambda self: list(
-        filter(lambda name: not self._is_gav(name), self.filelist)))
-    mvn_files = property(lambda self: list(
-        filter(self._is_gav, self.filelist)))
+    svn_files = property(lambda self: list(filter(lambda path: not self._is_gav(path), self.filelist)))
+    mvn_files = property(lambda self: list(filter(lambda path: self._is_gav(path), self.filelist)))
 
     def __init__(self, list_raw):
         """ List given as an argument is parsed and checked
 
-        :param list_raw: either ;- or newline-separated string or list of filenames 
+        :param str list_raw: either ;- or newline-separated string or list of filenames 
         """
         if not list_raw:
             list_raw = []
         if isinstance(list_raw, str):
             list_raw = self._split_merged_list(list_raw)
         elif isinstance(list_raw, list):
-            list_raw = list(filter(None, list_raw))
+            list_raw = list(filter(lambda x: bool(x), list_raw))
         else:
-            raise ValueError(
-                "Delivery list can be created from single string or list of strings only")
+            raise ValueError("Delivery list can be created from single string or list of strings only")
 
         # currently we support only svn files and maven artifacts
-        mvn_files = filter(self._is_gav, list_raw)
-        raw_svn_files = filter(lambda name: not self._is_gav(name), list_raw)
-        svn_files = map(self._preprocess_svn_path, raw_svn_files)
+        mvn_files = list(filter(lambda path: self._is_gav(path), list_raw))
+        raw_svn_files = list(filter(lambda path: not self._is_gav(path), list_raw))
+        svn_files = list(map(lambda x: self._preprocess_svn_path(x), raw_svn_files))
         self.filelist = list(svn_files) + list(mvn_files)
 
     def _split_merged_list(self, merged):
-        return list(filter(None, [element.strip() for element in
+        return list(filter(lambda x: bool(x), [element.strip() for element in
                                   merged.replace(';', '\n').splitlines()]))
 
     def _is_gav(self, name):
         try:
-            NexusAPI.parse_gav(name)
-            return True
+            parse_gav(name)
         except ValueError:  # raised by gav parser
             return False
 
+        return True
+
     def _preprocess_svn_path(self, raw_path):
         """ Forces forward slashes and resolves relative path characters """
-        raw_path = raw_path.replace("\\", "/").strip("/")
+        raw_path = raw_path.replace("\\", posixpath.sep).strip(posixpath.sep)
         try:
             path = normpath(raw_path)
-        except IllegalBackReference:
-            raise InvalidPathError(
-                "Cannot reach specified path: '%s'" % raw_path)
-        if path in ["", ".", "/"]:
-            raise InvalidPathError(
-                "Cannot include full SVN branch: '%s'" % raw_path)
+        except IllegalBackReference as _e:
+            raise InvalidPathError("Cannot reach specified path: '%s'" % raw_path) from _e
+
+        if path in ["", ".", posixpath.sep]:
+            raise InvalidPathError("Cannot include full SVN branch: '%s'" % raw_path)
+
         return path

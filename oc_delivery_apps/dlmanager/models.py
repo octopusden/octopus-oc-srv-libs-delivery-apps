@@ -29,7 +29,7 @@ class UserAwareHistoricalRecords(HistoricalRecords):
         app_label = "dlmanager"
 
 
-class Delivery(models.Model, DLModels.Delivery):
+class Delivery(DLModels.Delivery):
     """ Represents set of files prepared for send to client """
     # GAV components of delivery archive
     groupid = models.CharField(max_length=255, db_column="groupId")
@@ -202,7 +202,6 @@ class FtpUploadClientOptions(models.Model):
 class PrivateFile(models.Model):
     """ Defines file type which shouldn't be sent to client """
     regexp = models.CharField(max_length=1000)
-
 
 class JiraInstances(models.Model):
     """
