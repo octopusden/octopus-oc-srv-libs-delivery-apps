@@ -7,18 +7,18 @@ if not settings.configured:
         os.makedirs('/tmp')
 
     settings.configure(
-        DATABASES={
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': '/tmp/test.db',
-            }},
-        USE_TZ=True,
-        TIME_ZONE='Etc/UTC',
-        INSTALLED_APPS=[
-            'oc_delivery_apps.dlcontents',
-            'oc_delivery_apps.checksums',
-            'oc_delivery_apps.dl_commons.dlmanager',
-            'django.contrib.contenttypes',
-            'django.contrib.auth'],)
+            DATABASES={
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': '/tmp/test.db',
+                    }},
+                USE_TZ=True,
+                TIME_ZONE='Etc/UTC',
+                INSTALLED_APPS=[
+                    'oc_delivery_apps.dlcontents',
+                    'oc_delivery_apps.checksums',
+                    'oc_delivery_apps.dl_commons.dlmanager',
+                    'django.contrib.contenttypes',
+                    'django.contrib.auth'],)
 
     django.setup()

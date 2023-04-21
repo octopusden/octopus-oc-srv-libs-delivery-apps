@@ -18,7 +18,7 @@ if not settings.configured:
                     'oc_delivery_apps.dlcontents',
                     'oc_delivery_apps.checksums',
                     'oc_delivery_apps.dl_commons.dlmanager',
-                    'django.contrib.contenttypes', 
+                    'django.contrib.contenttypes',
                     'django.contrib.auth'],)
 
     django.setup()
