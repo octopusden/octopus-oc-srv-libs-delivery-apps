@@ -68,3 +68,17 @@ class CheckSumsComponentTest(django.test.TransactionTestCase):
         _all_names = Component.get_all_names()
         self.assertEqual(("FILE", "File"), _all_names.pop(0))
         self.assertEqual([('TYPE2', "Type Two"),('TYPE1', "Type One")], _all_names)
+
+    def test_get_templates(self):
+        _loc_type = models.LocTypes(code="NXS", name="Maven compatible")
+        _loc_type.save()
+        _t1 = models.CiTypes(code="TYPE1", name="Type One", is_standard="N", is_deliverable=False)
+        _t1.save()
+
+        for _idx in range(0, 2):
+            models.CiRegExp(ci_type=_t1, loc_type=_loc_type, regexp="Rec%s%d:_VERSION_" % (_t1.code, _idx)).save()
+        
+        _all_templates = Component(_t1).get_templates("0.0")
+        self.assertIn('RecTYPE10:0.0[^:]*', _all_templates)
+        self.assertIn('RecTYPE11:0.0[^:]*', _all_templates)
+        self.assertEqual(2, len(_all_templates))
