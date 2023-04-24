@@ -23,8 +23,8 @@ logging.getLogger().disabled = True
 
 class CheckSumsControllersTester(django.test.TransactionTestCase):
     def setUp(self):
-        #django.core.management.call_command('migrate', run_syncdb=True, verbosity=0, interactive=False )
-        django.core.management.call_command('migrate', verbosity=0, interactive=False )
+        #django.core.management.call_command('migrate', run_syncdb=True, verbosity=0, interactive=False)
+        django.core.management.call_command('migrate', verbosity=0, interactive=False)
 
     def tearDown(self):
         django.core.management.call_command('flush', verbosity=0, interactive=False)

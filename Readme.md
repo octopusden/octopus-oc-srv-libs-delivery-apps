@@ -29,3 +29,6 @@ Calculation templates:
 - **RN**: `${MVN_PREFIX}.${MVN_RN_SUFFIX}.release_notes`
 
 This means *MVN_PREFIX*, *MVN_DOC_SUFFIX* and *MVN_RN_SUFFIX* should be set before calling the corresponding routies.
+
+## DLManager
+TODO:

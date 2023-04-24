@@ -3,7 +3,7 @@ from setuptools import setup
 import glob
 import os
 
-__version = "11.2.3"
+__version = "11.2.4"
 
 spec = {
     "name": "oc-delivery-apps",
@@ -15,11 +15,11 @@ spec = {
     "packages": [
         "oc_delivery_apps",
         "oc_delivery_apps.checksums",
+        "oc_delivery_apps.checksums.migrations",
         "oc_delivery_apps.dlcontents",
-        "oc_delivery_apps.dl_commons",
-        "oc_delivery_apps.dl_commons.dlmanager",
-        "oc_delivery_apps.dl_commons.dlinterface",
-        "oc_delivery_apps.dl_commons.django_tests"
+        "oc_delivery_apps.dlcontents.migrations",
+        "oc_delivery_apps.dlmanager",
+        "oc_delivery_apps.dlmanager.migrations",
     ],
     "install_requires": [
         "fs",
@@ -28,7 +28,8 @@ spec = {
         "python-magic",
         "oc-orm-initializator",
         "sqlparse",
-        "configobj"
+        "configobj",
+        "pytz"
     ],
     "python_requires": ">=3.6"
 }
