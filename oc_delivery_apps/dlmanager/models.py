@@ -71,9 +71,6 @@ class Delivery(DLModels.Delivery):
     comment = models.CharField(max_length=1000, blank=True)
     history = UserAwareHistoricalRecords()
 
-    def __str__(self):
-        return self.groupid + ':' + self.artifactid + ':' + self.version
-
     class Meta:
         managed = True
         app_label = "dlmanager"

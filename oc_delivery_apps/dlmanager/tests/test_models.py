@@ -1,9 +1,28 @@
+#!/usr/bin/env python3
 # coding: utf-8 --*
 import django.test
 from . import django_settings
 from oc_delivery_apps.dlmanager.DLModels import DeliveryList, InvalidPathError
-from oc_delivery_apps.dlmanager.models import Delivery, Client, FtpUploadClientOptions
+import oc_delivery_apps.dlmanager.models as models
 
+# disable extra logging output
+import logging
+logging.getLogger().propagate = False
+logging.getLogger().disabled = True
+
+class DeliveryModelsTestSuite(django.test.TestCase):
+    def setUp(self):
+        # this tests all migrations also
+        django.core.management.call_command('migrate', verbosity=0, interactive=False)
+
+    def tearDown(self):
+        django.core.management.call_command('flush', verbosity=0, interactive=False)
+
+    def test_delivery_attributes(self):
+        _m = models.Delivery(groupid="groupId", artifactid="artifactId", version="version")
+        _m.save()
+        self.assertEqual(str(_m), "groupId:artifactId:version:zip")
+        self.assertEqual(_m.gav, "groupId:artifactId:version:zip")
 
 class DeliveryListTestSuite(django.test.SimpleTestCase):
 

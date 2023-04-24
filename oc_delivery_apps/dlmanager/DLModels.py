@@ -20,8 +20,7 @@ class Delivery(models.Model):
     filelist = property(lambda self: self.delivery_list.filelist)
     svn_files = property(lambda self: self.delivery_list.svn_files)
     mvn_files = property(lambda self: self.delivery_list.mvn_files)
-    gav = property(lambda self: ":".join(
-        [self.groupid, self.artifactid, self.version, "zip"]))
+    gav = property(lambda self: ":".join([self.groupid, self.artifactid, self.version, "zip"]))
     delivery_name = property(lambda self: self.artifactid+"-"+self.version)
     delivery_list = property(lambda self: DeliveryList(
         self.mf_delivery_files_specified))
@@ -59,20 +58,18 @@ class Delivery(models.Model):
 
         :returns: string describing combination of flag_... values
         """
-        flags = (self.flag_approved, self.flag_uploaded, self.flag_failed)
-        code = ("A" if flags[0] else "-") + ("U" if flags[1] else "-") + (
-            "F" if flags[2] else "-")
         code_statuses = {
-            "---": "New",
-            "A--": "Approved, waiting for delivery",
-            "AU-": "Delivered",
-            "-U-": "Delivered",
-            "--F": "Marked as bad (not delivered)",
-            "A-F": "Marked as bad (not delivered)",
-            "-UF": "Marked as bad after delivery",
-            "AUF": "Marked as bad after delivery",
+            (False, False, False): "New",
+            (True, False, False): "Approved, waiting for delivery",
+            (True, True, False): "Delivered",
+            (False, True, False): "Delivered",
+            (False, False, True): "Marked as bad (not delivered)",
+            (True, False, True): "Marked as bad (not delivered)",
+            (False, True, True): "Marked as bad after delivery",
+            (True, True, True): "Marked as bad after delivery",
         }
-        return code_statuses.get(code, "Invalid status")
+
+        return code_statuses.get((self.flag_approved, self.flag_uploaded, self.flag_failed))
 
     class Meta:
         db_table = 'deliveries'
@@ -94,7 +91,7 @@ class DeliveryList(object):
         :param str list_raw: either ;- or newline-separated string or list of filenames 
         """
         if not list_raw:
-            list_raw = []
+            list_raw = list()
         if isinstance(list_raw, str):
             list_raw = self._split_merged_list(list_raw)
         elif isinstance(list_raw, list):
