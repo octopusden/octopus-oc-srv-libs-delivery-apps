@@ -304,3 +304,7 @@ class TestClientRelations(django.test.TestCase):
         # this one will fail until model bug with "unique_together" index will not be fixed
         with self.assertRaises(IntegrityError):
             models.JiraProjects(project_id=1, code="TPR1", name="Test Project 1", instance_id=_ji_1).save()
+
+        # but for another jira instance this should not give an exception
+        models.JiraProjects(project_id=1, code="TPR1", name="Test Project 1", instance_id=_ji_2).save()
+        self.assertEqual(models.JiraProjects.objects.count(), 2)
