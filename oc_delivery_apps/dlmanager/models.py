@@ -225,8 +225,9 @@ class JiraProjects(models.Model):
     name = models.CharField(blank=True, null=True, max_length=255)
     instance_id = models.ForeignKey(
         JiraInstances, on_delete=models.CASCADE, blank=True, null=True)
-    unique_together = ("project_id", "instance_id")
 
     class Meta:
         managed = True
         app_label = "dlmanager"
+        # note: this index does not work due to former bug in its description and no migration created for it
+        unique_together = (("project_id", "instance_id"))

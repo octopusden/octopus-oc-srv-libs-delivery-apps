@@ -6,6 +6,8 @@ from oc_delivery_apps.dlmanager.DLModels import DeliveryList, InvalidPathError
 import oc_delivery_apps.dlmanager.models as models
 import django.contrib.auth.models as auth_models
 import datetime
+from django.db import IntegrityError
+from unittest import expectedFailure
 
 # disable extra logging output
 import logging
@@ -245,19 +247,60 @@ class TestClientRelations(django.test.TestCase):
         _m.save()
         self.assertEqual(_m.business_status.description, "Rejected by client")
 
+    def test_client_user(self):
+        _client = models.Client(code="SMTTEST", country="SometningC", is_active=False)
+        _client.save()
+        _client.refresh_from_db()
+        _user_1 = auth_models.User(username="user_1")
+        _user_1.save()
+        _user_2 = auth_models.User(username="user_2")
+        _user_2.save()
+        models.ClientUser(userid=_user_1, clientid=_client).save()
+        models.ClientUser(userid=_user_2, clientid=_client).save()
+        self.assertEqual(models.ClientUser.objects.count(), 2)
+
+        for _cu in models.ClientUser.objects.all():
+            self.assertTrue(_cu.userid.username.startswith('user_'))
+            self.assertEqual(_cu.clientid.code, "SMTTEST")
+
     def test_client_language(self):
         _lng = models.ClientLanguage(code='SMTH', description="Something")
         _lng.save()
-        _client = models.Client(code="SMTTEST", name="Sometning Test", is_active=False, language=_lng)
+        _client = models.Client(code="SMTTEST", country="SometningC", is_active=False, language=_lng)
         _client.save()
         _client.refresh_from_db()
-        self.assertEqual(_client.language.code, 'SMTH')
-
-    def test_client_user(self):
-        pass
+        self.assertEqual(_client.language.code, "SMTH")
 
     def test_client_mail(self):
-        pass
+        _client = models.Client(code="SMTTEST", country="SometningC", is_active=False)
+        _client.save()
+        _client.refresh_from_db()
+        models.ClientEmailAddress(clientid=_client, email_address='mail@test.example.com').save()
+        self.assertEqual(models.ClientEmailAddress.objects.count(), 1)
+        self.assertEqual(str(models.ClientEmailAddress.objects.last()), "SMTTEST mail@test.example.com")
 
+    @expectedFailure
     def test_jira_projects(self):
-        pass
+        _ji_1 = models.JiraInstances(
+                name="The One",
+                code="J1",
+                priority=0,
+                api_url="api",
+                int_url_prefix="internal",
+                ext_url_prefix="external")
+        _ji_1.save()
+        _ji_2 = models.JiraInstances(
+                name="The Two",
+                code="J2",
+                priority=1,
+                api_url="api",
+                int_url_prefix="internal",
+                ext_url_prefix="external")
+        _ji_1.save()
+
+        # integrity constarint check
+        models.JiraProjects(project_id=1, code="TPR1", name="Test Project 1", instance_id=_ji_1).save()
+
+        # this one will fail until model bug with "unique_together" index will not be fixed
+        with self.assertRaises(IntegrityError):
+            models.JiraProjects(project_id=1, code="TPR1", name="Test Project 1", instance_id=_ji_1).save()
