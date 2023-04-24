@@ -5,6 +5,7 @@ from . import django_settings
 from oc_delivery_apps.dlmanager.DLModels import DeliveryList, InvalidPathError
 import oc_delivery_apps.dlmanager.models as models
 import django.contrib.auth.models as auth_models
+import datetime
 
 # disable extra logging output
 import logging
@@ -190,9 +191,40 @@ class ClientModelTestSuite(django.test.TestCase):
 class DeliveryHistoryModelTestSuite(django.test.TestCase):
     """
     Do not hesitate for DeliveryHistoryTestSuite which tests historical records
-    This one tests separate status change table
+    This one tests separate status change table. To be removed with this leagcy
     """
-    pass
+    def setUp(self):
+        django.core.management.call_command('migrate', verbosity=0, interactive=False)
+
+    def tearDown(self):
+        django.core.management.call_command('flush', verbosity=0, interactive=False)
+
+    def test_status_change(self):
+        _m = models.Delivery(groupid="groupId.BOMBY", artifactid="artifactId", version="version")
+        _m.mf_delivery_files_specified = 'g:a:v2:zip; b/r/t/g-g.txt'
+        _m.save()
+
+        _h = models.DeliveryHistory()
+        _h.deliveryid = _m
+        _h.change_by = 'user_1'
+        _h.message = 'The Message'
+        _h.time = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
+        _h.save()
+
+        _h = models.DeliveryHistory()
+        _h.deliveryid = _m
+        _h.change_by = 'user_2'
+        _h.message = 'The Message 2'
+        _h.time = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
+        _h.flag_approved = True
+        _h.save()
+
+        _m.refresh_from_db()
+        self.assertEqual(models.DeliveryHistory.objects.filter(deliveryid=_m).count(), 2)
 
 class TestClientRelations(django.test.TestCase):
-    pass
+    def setUp(self):
+        django.core.management.call_command('migrate', verbosity=0, interactive=False)
+
+    def tearDown(self):
+        django.core.management.call_command('flush', verbosity=0, interactive=False)
