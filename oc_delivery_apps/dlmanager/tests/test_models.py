@@ -4,6 +4,7 @@ import django.test
 from . import django_settings
 from oc_delivery_apps.dlmanager.DLModels import DeliveryList, InvalidPathError
 import oc_delivery_apps.dlmanager.models as models
+import django.contrib.auth.models as auth_models
 
 # disable extra logging output
 import logging
@@ -58,8 +59,30 @@ class DeliveryModelsTestSuite(django.test.TestCase):
         self.assertEqual(_m.get_flags_description(), "Marked as bad after delivery")
 
 class DeliveryHistoryTestSuite(django.test.TransactionTestCase):
-    pass
-    ## TODO: test history!
+    def setUp(self):
+        django.core.management.call_command('migrate', verbosity=0, interactive=False)
+
+    def tearDown(self):
+        django.core.management.call_command('flush', verbosity=0, interactive=False)
+
+    def test_change_user(self):
+        # create two users
+        _user_1 = auth_models.User(username="user_1")
+        _user_1.save()
+        _user_2 = auth_models.User(username="user_2")
+        _user_2.save()
+        _m = models.Delivery(groupid="groupId.BOMBY", artifactid="artifactId", version="version")
+        _m.mf_delivery_files_specified = 'g:a:v2:zip; b/r/t/g-g.txt'
+        _m.mf_delivery_author = "user_1"
+        _m.save()
+        self.assertEqual(_m.history.all().count(), 1)
+        _m._change_reason = "Testy Test"
+        _m.set_approved(True, "user_2")
+        self.assertEqual(_m.history.all().count(), 2)
+        _last_h = _m.history.first()
+        self.assertEqual("Testy Test", _last_h.history_change_reason)
+        self.assertTrue(_last_h.flag_approved)
+        self.assertEqual(_last_h.request_by, "user_2")
 
 class DeliveryListTestSuite(django.test.SimpleTestCase):
 
