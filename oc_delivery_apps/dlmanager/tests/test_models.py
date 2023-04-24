@@ -19,10 +19,47 @@ class DeliveryModelsTestSuite(django.test.TestCase):
         django.core.management.call_command('flush', verbosity=0, interactive=False)
 
     def test_delivery_attributes(self):
-        _m = models.Delivery(groupid="groupId", artifactid="artifactId", version="version")
+        _m = models.Delivery(groupid="groupId.BOMBY", artifactid="artifactId", version="version")
+        _m.mf_delivery_files_specified = 'g:a:v1:zip; b/r/t/g.txt'
         _m.save()
-        self.assertEqual(str(_m), "groupId:artifactId:version:zip")
-        self.assertEqual(_m.gav, "groupId:artifactId:version:zip")
+        self.assertEqual(str(_m), "groupId.BOMBY:artifactId:version:zip")
+        self.assertEqual(_m.gav, "groupId.BOMBY:artifactId:version:zip")
+        self.assertEqual(_m.client_name, "BOMBY")
+        self.assertEqual(len(_m.filelist), 2)
+        self.assertIn('g:a:v1:zip', _m.filelist)
+        self.assertIn('b/r/t/g.txt', _m.filelist)
+        self.assertEqual(_m.mvn_files, ['g:a:v1:zip'])
+        self.assertEqual(_m.svn_files, ['b/r/t/g.txt'])
+        self.assertEqual(_m.delivery_name, "artifactId-version")
+    
+    def test_set_flags(self):
+        _m = models.Delivery(groupid="groupId.BOMBY", artifactid="artifactId", version="version")
+        _m.mf_delivery_files_specified = 'g:a:v2:zip; b/r/t/g-g.txt'
+        _m.save()
+
+        _m.set_approved(True, 'user')
+        self.assertTrue(_m.flag_approved)
+        self.assertEqual(_m.request_by, "user")
+        self.assertEqual(_m.get_flags_description(), "Approved, waiting for delivery")
+        _m.set_uploaded(True, 'user2')
+        self.assertTrue(_m.flag_uploaded)
+        self.assertEqual(_m.request_by, "user2")
+        self.assertEqual(_m.get_flags_description(), "Delivered")
+        _m.set_approved(False, 'user3')
+        self.assertFalse(_m.flag_approved)
+        self.assertEqual(_m.request_by, "user3")
+        self.assertEqual(_m.get_flags_description(), "Delivered")
+        _m.set_approved(True, 'user')
+        _m.set_failed(True, 'user')
+        self.assertTrue(_m.flag_failed)
+        self.assertEqual(_m.get_flags_description(), "Marked as bad after delivery")
+        _m.set_approved(False, 'user')
+        self.assertFalse(_m.flag_approved)
+        self.assertEqual(_m.get_flags_description(), "Marked as bad after delivery")
+
+class DeliveryHistoryTestSuite(django.test.TransactionTestCase):
+    pass
+    ## TODO: test history!
 
 class DeliveryListTestSuite(django.test.SimpleTestCase):
 
@@ -75,7 +112,7 @@ class DeliveryListTestSuite(django.test.SimpleTestCase):
         self.assertEqual([], dlist.mvn_files)
 
     def test_delivery_list_inside_delivery(self):
-        delivery = Delivery()
+        delivery = models.Delivery()
         delivery.mf_delivery_files_specified = "\n\nsvn_file\n;\ng:a:v;"
         dlist = delivery.delivery_list
         self.assertEqual(["svn_file", "g:a:v"], dlist.filelist)
@@ -115,14 +152,14 @@ class DeliveryListTestSuite(django.test.SimpleTestCase):
 class ClientModelTestSuite(django.test.TestCase):
 
     def test_client_reachable_initially(self):
-        self.assertTrue(Client().is_reachable)
+        self.assertTrue(models.Client().is_reachable)
 
     def test_nonreachable_setup_detected(self):
-        client, _ = Client.objects.get_or_create()
-        FtpUploadClientOptions(client=client, can_receive=False).save()
+        client, _ = models.Client.objects.get_or_create()
+        models.FtpUploadClientOptions(client=client, can_receive=False).save()
         self.assertFalse(client.is_reachable)
 
     def test_reachable_setup_detected(self):
-        client, _ = Client.objects.get_or_create()
-        FtpUploadClientOptions(client=client, can_receive=True).save()
+        client, _ = models.Client.objects.get_or_create()
+        models.FtpUploadClientOptions(client=client, can_receive=True).save()
         self.assertTrue(client.is_reachable)
