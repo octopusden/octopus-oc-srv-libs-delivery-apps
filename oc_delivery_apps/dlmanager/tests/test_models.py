@@ -186,3 +186,13 @@ class ClientModelTestSuite(django.test.TestCase):
         client, _ = models.Client.objects.get_or_create()
         models.FtpUploadClientOptions(client=client, can_receive=True).save()
         self.assertTrue(client.is_reachable)
+
+class DeliveryHistoryModelTestSuite(django.test.TestCase):
+    """
+    Do not hesitate for DeliveryHistoryTestSuite which tests historical records
+    This one tests separate status change table
+    """
+    pass
+
+class TestClientRelations(django.test.TestCase):
+    pass
