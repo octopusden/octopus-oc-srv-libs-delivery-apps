@@ -228,3 +228,36 @@ class TestClientRelations(django.test.TestCase):
 
     def tearDown(self):
         django.core.management.call_command('flush', verbosity=0, interactive=False)
+
+    def test_business_status(self):
+        _bs = models.BusinessStatus()
+        _bs.description = _bs.statuses_names.get('received')
+        _bs.save()
+        _m = models.Delivery(groupid="groupId.BOMBY", artifactid="artifactId", version="version")
+        _m.mf_delivery_files_specified = 'g:a:v2:zip; b/r/t/g-g.txt'
+        _m.business_status = _bs
+        _m.save()
+        self.assertEqual(_m.business_status.description, "Received by client")
+        _bs = models.BusinessStatus()
+        _bs.description = _bs.statuses_names.get('rejected')
+        _bs.save()
+        _m.business_status = _bs
+        _m.save()
+        self.assertEqual(_m.business_status.description, "Rejected by client")
+
+    def test_client_language(self):
+        _lng = models.ClientLanguage(code='SMTH', description="Something")
+        _lng.save()
+        _client = models.Client(code="SMTTEST", name="Sometning Test", is_active=False, language=_lng)
+        _client.save()
+        _client.refresh_from_db()
+        self.assertEqual(_client.language.code, 'SMTH')
+
+    def test_client_user(self):
+        pass
+
+    def test_client_mail(self):
+        pass
+
+    def test_jira_projects(self):
+        pass
