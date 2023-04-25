@@ -72,7 +72,7 @@ class Command(base.BaseCommand):
         # reset all original entries to initial state
         # ! SQLite fails on pk_in=original_pks because it's too long, so split it
         for pks_range in [original_pks[num:num+500]
-                          for num in xrange(0, len(original_pks), 500)]:
+                          for num in range(0, len(original_pks), 500)]:
             # skip creation_date=null - simple_history requires history date
             original = ext_history.filter(pk__in=pks_range)
             with_initial = original.exclude(creation_date__isnull=True)
