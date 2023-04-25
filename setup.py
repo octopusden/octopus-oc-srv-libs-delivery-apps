@@ -3,7 +3,7 @@ from setuptools import setup
 import glob
 import os
 
-__version = "11.2.5"
+__version = "11.2.6"
 
 spec = {
     "name": "oc-delivery-apps",
@@ -20,6 +20,8 @@ spec = {
         "oc_delivery_apps.dlcontents.migrations",
         "oc_delivery_apps.dlmanager",
         "oc_delivery_apps.dlmanager.migrations",
+        "oc_delivery_apps.dlmanager.management",
+        "oc_delivery_apps.dlmanager.management.commands",
     ],
     "install_requires": [
         "fs",
