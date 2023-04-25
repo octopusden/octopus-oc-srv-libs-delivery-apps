@@ -2,7 +2,7 @@
 
 
 from django.core.management import base, call_command
-from dlmanager.models import Delivery
+from oc_delivery_apps.dlmanager.models import Delivery
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from django.db.models import Q, F, Min, Max, ExpressionWrapper, fields
