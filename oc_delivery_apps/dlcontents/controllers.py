@@ -702,7 +702,7 @@ class CheckSumsController(object):
         :return int: current inclusion level (may be None)
         """
         file_r.refresh_from_db()
-        return file_r.depth_level
+        return file_r.depth_level or 0
 
     def _update_current_inclusion_depth(self, file_r, inclusion_level):
         """
@@ -712,7 +712,7 @@ class CheckSumsController(object):
         :return: modified file_r with new inclusion level set
         """
         file_r.refresh_from_db()
-        file_r.depth_level = max(file_r.depth_level, inclusion_level)
+        file_r.depth_level = max(file_r.depth_level or 0, inclusion_level or 0)
         file_r.save()
         return file_r
 
