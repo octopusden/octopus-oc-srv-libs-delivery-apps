@@ -230,7 +230,6 @@ class CheckSumsController(object):
         # get rid of trash in the arguments
         location = location.strip()
         loc_type = loc_type.strip().upper()
-        ci_type = ci_type.strip().upper()
         mime_type = mime_type.strip()
         checksum = checksum.strip()
         cs_type = cs_type.strip().upper()
@@ -239,14 +238,13 @@ class CheckSumsController(object):
         if not self._is_strict_cs_prov(cs_prov):
             return False
 
+        if not ci_type:
+            ci_type = self.ci_type_by_path(location, loc_type)
+
         # otherwise store all. IS_DELETED will be False by Model.
         _ci_type = models.CiTypes.objects.filter(code=ci_type).last()
         _loc = None
         _cs = None
-
-        if not _ci_type:
-            # do not using 'get' since it will raise unnecessary exception in case of failure
-            _ci_type = models.CiTypes.objects.filter(code="FILE").last()
 
         try:
             with transaction.atomic():
@@ -379,7 +377,7 @@ class CheckSumsController(object):
             if re.match(_regexp_s, path):
                 return _regexp.ci_type.code
 
-        return None
+        return 'FILE'
 
     def ci_type_by_gav(self, gav):
         """
