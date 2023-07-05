@@ -101,7 +101,9 @@ class ArchiveObject(object):
         :return NamedTemporaryFile:
         """
 
-        _rs = tempfile.NamedTemporaryFile(suffix=posixpath.basename(pth_e))
+        _sfx = posixpath.basename(pth_e)
+        _sfx = list(posixpath.splitext(pth_e)).pop()
+        _rs = tempfile.NamedTemporaryFile(suffix=_sfx)
 
         if self._mode == 'TAR':
             # unfortunately 'shutil.copyfileobj' does not work properly here
