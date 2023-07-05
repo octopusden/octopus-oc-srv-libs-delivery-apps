@@ -101,9 +101,9 @@ class ArchiveObject(object):
         :return NamedTemporaryFile:
         """
 
-        _sfx = posixpath.basename(pth_e)
-        _sfx = list(posixpath.splitext(pth_e)).pop()
-        _rs = tempfile.NamedTemporaryFile(suffix=_sfx)
+        # make suffix as extension only - needed for 'wrap' to work correctly
+        # limit it to five characters - usually it is enough for real extensions
+        _rs = tempfile.NamedTemporaryFile(suffix=list(posixpath.splitext(pth_e)).pop()[0:5])
 
         if self._mode == 'TAR':
             # unfortunately 'shutil.copyfileobj' does not work properly here
