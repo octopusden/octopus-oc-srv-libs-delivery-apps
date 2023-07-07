@@ -1216,12 +1216,12 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         with unittest.mock.patch("oc_delivery_apps.checksums.controllers.wrapper.PLSQLWrapper", return_value=MockWrapper()) as _x:
             _csc = CheckSumsController()
-            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1", "NXS")
+            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1:sql", "NXS")
             _x.assert_called()
 
         # check database checksums
         self.assertEqual(models.Locations.objects.count(), 1)
-        self.assertEqual(models.Locations.objects.last().path, "pl.sql.procedure:testproc:1.1.1")
+        self.assertEqual(models.Locations.objects.last().path, "pl.sql.procedure:testproc:1.1.1:sql")
         self.assertEqual(models.Files.objects.count(), 1)
         _fl_r = models.Files.objects.last()
         self.assertEqual(_fl_r.ci_type.code, "CODE_TYPE_1")
@@ -1230,7 +1230,56 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
         self.assertEqual(models.CsProv.objects.count(), 8)
         self.assertEqual(models.CheckSums.objects.filter(file=_fl_r).count(), 4)
 
-        # now add the same file once again and check  no duplicates appended
+        _sql_f.close()
+
+    def test_register_includes__sql_no_ext(self):
+        # prepare one PL/SQL file
+        _sql_c = b"create or replace procedure testproc(testarg in varchar2(100 char)) as t varchar2(100 char); begin t:=testarg.substr(1,0); end;"
+        _wrp_c = b"create or replace procedure testproc(testarg in varchar2(100 char)) wrapped abcdef abcdef abcdef"
+
+        # citype, loctype, cstype
+        _citype = models.CiTypes(code="CODE_TYPE_1", name="Name One", is_standard="N", is_deliverable=False)
+        _citype.save()
+        _loctype_n = models.LocTypes(code="NXS", name="Maven-compatible")
+        _loctype_n.save()
+        _cstype = models.CsTypes(code="MD5", name="MD5")
+        _cstype.save()
+
+        # make sure DB is empty
+        self.assertEqual(models.Files.objects.count(), 0)
+        self.assertEqual(models.Locations.objects.count(), 0)
+        self.assertEqual(models.CheckSums.objects.count(), 0)
+
+        # prepare file
+        _sql_f = tempfile.NamedTemporaryFile(suffix=".trt")
+        _sql_f.write(_sql_c)
+        _sql_f.flush()
+
+        # mock wrapper since we do not have original one
+        class MockWrapper(unittest.mock.MagicMock):
+            def wrap_buf(self, fl_in, write_to):
+                assert(write_to is not None)
+                write_to.write(_wrp_c)
+
+            def unwrap_buf(self, fl_in, write_to):
+                assert(write_to is not None)
+                write_to.write(_sql_c)
+
+        with unittest.mock.patch("oc_delivery_apps.checksums.controllers.wrapper.PLSQLWrapper", return_value=MockWrapper()) as _x:
+            _csc = CheckSumsController()
+            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1", "NXS")
+            _x.assert_not_called()
+
+        # check database checksums
+        self.assertEqual(models.Locations.objects.count(), 1)
+        self.assertEqual(models.Locations.objects.last().path, "pl.sql.procedure:testproc:1.1.1")
+        self.assertEqual(models.Files.objects.count(), 1)
+        _fl_r = models.Files.objects.last()
+        self.assertEqual(_fl_r.ci_type.code, "CODE_TYPE_1")
+        # should be 1 checksum
+        self.assertEqual(models.CsProv.objects.count(), 1)
+        self.assertEqual(models.CheckSums.objects.filter(file=_fl_r).count(), 1)
+
         _sql_f.close()
 
     def test_get_file_by_file_obj(self):
