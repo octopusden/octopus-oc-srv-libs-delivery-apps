@@ -245,8 +245,14 @@ class CheckSumsController(object):
         _ci_type = models.CiTypes.objects.filter(code=ci_type).last()
 
         if not _ci_type:
-            # may be wrong type specified by caller, raise an exception
-            raise ValueError("Incorrect CI_TYPE: [%s]" % ci_type)
+            # may be wrong type specified by caller.
+            # Try to make it 'FILE' and raise an exception if not found
+            _ci_type = models.CiTypes.objects.filter(code='FILE').last()
+        
+        if not _ci_type:
+            raise ValueError("Invalid CI_TYPE: [%s]" % ci_type)
+        else:
+            logging.error("Invalid CI_TYPE: [%s], replaced to [FILE]" % ci_type)
 
         _loc = None
         _cs = None
@@ -616,8 +622,14 @@ class CheckSumsController(object):
         _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
 
         if not _ci_type_r:
-            # may be wrong type specified by caller, raise an exception
-            raise ValueError("Incorrect CI_TYPE: [%s]" % ci_type)
+            # may be wrong type specified by caller.
+            # Try to make it 'FILE' and raise an exception if not found
+            _ci_type_r = models.CiTypes.objects.filter(code='FILE').last()
+        
+        if not _ci_type_r:
+            raise ValueError("Invalid CI_TYPE: [%s]" % ci_type)
+        else:
+            logging.error("Invalid CI_TYPE: [%s], replaced to [FILE]" % ci_type)
 
         file_o.seek(0, os.SEEK_SET)
         _cs_d = self.get_all_sql_checksums(file_o)
@@ -642,7 +654,7 @@ class CheckSumsController(object):
         # check arguments is not needed since they are checked in sub-methods
         # one exception: location and location type have to be set in pair
         if loc_path and not loc_type:
-            raise ValueError("loc_path is specified but loc_type is missing")
+            raise ValueError("'loc_path' is specified but 'loc_type' is missing")
 
         if loc_path: 
             self.add_location(_fl_m_r, loc_path, loc_type, loc_revision)
@@ -824,7 +836,7 @@ class CheckSumsController(object):
         # check arguments is not needed since they are checked in sub-methods
         # one exception: location and location type have to be set in pair
         if loc_path and not loc_type:
-            raise ValueError("loc_path is specified but loc_type missing")
+            raise ValueError("'loc_path' is specified but 'loc_type' missing")
 
         if not ci_type:
             ci_type = self.ci_type_by_path(loc_path, loc_type)
@@ -832,8 +844,14 @@ class CheckSumsController(object):
         _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
 
         if not _ci_type_r:
-            # may be wrong type specified by caller, raise an exception
-            raise ValueError("Incorrect CI_TYPE: [%s]" % ci_type)
+            # may be wrong type specified by caller.
+            # Try to make it 'FILE' and raise an exception if not found
+            _ci_type_r = models.CiTypes.objects.filter(code='FILE').last()
+        
+        if not _ci_type:
+            raise ValueError("Invalid CI_TYPE: [%s]" % ci_type)
+        else:
+            logging.error("Invalid CI_TYPE: [%s], replaced to [FILE]" % ci_type)
 
         _fl_r = None
 
@@ -1036,7 +1054,7 @@ class CheckSumsController(object):
         """
 
         if step not in list(self.__cs_providers.keys()):
-            raise ValueError("%s not found in providers list" % step)
+            raise ValueError("[%s]: not found in providers list" % step)
 
         _result = dict()
 
