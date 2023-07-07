@@ -242,6 +242,11 @@ class CheckSumsController(object):
 
         # otherwise store all. IS_DELETED will be False by Model.
         _ci_type = models.CiTypes.objects.filter(code=ci_type).last()
+
+        if not _ci_type:
+            # may be wrong type specified by caller, raise an exception
+            raise ValueError("Incorrect CI_TYPE: [%s]" % ci_type)
+
         _loc = None
         _cs = None
 
@@ -609,6 +614,10 @@ class CheckSumsController(object):
 
         _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
 
+        if not _ci_type_r:
+            # may be wrong type specified by caller, raise an exception
+            raise ValueError("Incorrect CI_TYPE: [%s]" % ci_type)
+
         file_o.seek(0, os.SEEK_SET)
         _cs_d = self.get_all_sql_checksums(file_o)
         _fl_m_r = None
@@ -820,6 +829,11 @@ class CheckSumsController(object):
             ci_type = self.ci_type_by_path(loc_path, loc_type)
 
         _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
+
+        if not _ci_type_r:
+            # may be wrong type specified by caller, raise an exception
+            raise ValueError("Incorrect CI_TYPE: [%s]" % ci_type)
+
         _fl_r = None
 
         try:
@@ -1313,6 +1327,9 @@ class CheckSumsController(object):
             raise ValueError("Version is mandatory")
 
         _citype = models.CiTypes.objects.get(code=ci_type)
+
+        if not _citype:
+            raise ValueError("No documentation CI_TYPE found: [%s]" % ci_type)
 
         if _citype.doc_artifactid:
             return _citype.get_doc_gav(version)
