@@ -620,7 +620,7 @@ class CheckSumsController(object):
                 _fl_m_r = self._reg_all_sql_cs_provs(_fl_m_r, _cs_d)
 
         except IntegrityError as _e:
-            logging.exception(_e)
+            logging.debug(repr(_e), exc_info=True)
             _fl_m_r = self.get_file_by_checksums_dict(_cs_d)
 
             if _fl_m_r is None:
