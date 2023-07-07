@@ -369,6 +369,13 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
         # NOTE: non-existent CI_TYPE is specified, this is NOT A BUG
         _loctype = models.LocTypes(code="SVN", name="SubVersion")
         _loctype.save()
+
+        # first it should raise an erorr - we do not have 'CODE_TYPE_2" here and "FILE" is missing also
+        with self.assertRaises(ValueError):
+            _cs.add_location_checksum(_cs_t, _pth, "SVN", "CODE_TYPE_2", revision=0)
+
+        # now add the type - error sould disappear
+        _citype = models.CiTypes(code="CODE_TYPE_2", name="Name Two", is_standard="Y", is_deliverable=True)
         self.assertTrue(_cs.add_location_checksum(_cs_t, _pth, "SVN", "CODE_TYPE_2", revision=0))
         self.assertEqual(models.Files.objects.count(), 1)
         self.assertEqual(models.Locations.objects.count(), 2)
