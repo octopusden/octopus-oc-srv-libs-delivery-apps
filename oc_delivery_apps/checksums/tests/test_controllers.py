@@ -375,7 +375,8 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
             _cs.add_location_checksum(_cs_t, _pth, "SVN", "CODE_TYPE_2", revision=0)
 
         # now add the type - error sould disappear
-        models.CiTypes(code="CODE_TYPE_2", name="Name Two", is_standard="Y", is_deliverable=True).save()
+        _citype = models.CiTypes(code="CODE_TYPE_2", name="Name Two", is_standard="N", is_deliverable=False)
+        _citype.save()
         self.assertTrue(_cs.add_location_checksum(_cs_t, _pth, "SVN", "CODE_TYPE_2", revision=0))
         self.assertEqual(models.Files.objects.count(), 1)
         self.assertEqual(models.Locations.objects.count(), 2)
@@ -389,8 +390,6 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         # store file with another checksum but for existing location
         # file should be added and location overwritten
-        _citype = models.CiTypes(code="CODE_TYPE_2", name="Name Two", is_standard="N", is_deliverable=False)
-        _citype.save()
         _cs_t = "1"*32
         self.assertTrue(_cs.add_location_checksum(_cs_t, _pth, "SVN", "CODE_TYPE_2", revision=0))
         self.assertEqual(models.Files.objects.count(), 2)
