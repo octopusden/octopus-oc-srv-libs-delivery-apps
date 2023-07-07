@@ -13,6 +13,7 @@ import os
 import posixpath
 import shutil
 import logging
+from oc_cdtapi.NexusAPI import gav_to_path
 
 #BEG: DICTIONARIES
 # specific calculations should be placed here if needed
@@ -753,6 +754,32 @@ class CheckSumsController(object):
                 loc_type, loc_revision, inclusion_level, ci_type_sub, force_recalc, 0)
         return _fl_r
 
+    def _is_sql_extension(self, loc_path, loc_type):
+        """
+        Try to get extension from location path given and check against SQL
+        :param str loc_path: location path
+        :param str loc_type: location type code
+        """
+
+        if not loc_path:
+            logging.error("Empty location path given")
+            return False
+
+        # if location type is NXS (maven) then we have to convert it to path
+        # all other location types assumed to be POSIX-compatible
+        if isinstance(loc_type, str):
+            loc_type = loc_type.upper()
+
+        if loc_type == "NXS":
+            logging.debug("NXS location, converting GAV [%s] to POSIX path" % loc_path)
+            loc_path = gav_to_path(loc_path)
+            logging.debug("GAV converted to path: [%s]" % loc_path)
+
+        _ext = list(posixpath.splitext(loc_path)).pop().lower()
+        logging.debug("Extension is [%s]" % _ext)
+
+        return _ext in [".sql", ".plb"]
+
     def _register_file_obj(self, file_o, ci_type, loc_path, loc_type, loc_revision, inclusion_level, ci_type_sub, force_recalc, inclusion_level_calc):
         """
         Registers file or file-like object in the database. MD5 checksum and MIME-type of the file object will be calculated. 
@@ -782,7 +809,7 @@ class CheckSumsController(object):
         file_o.seek(0, 0)
         _inclusion_level_calc_src = inclusion_level_calc
 
-        if not _normalizer.is_sql(file_o.read(self.__sql_limit)):
+        if not self._is_sql_extension(loc_path, loc_type) and not _normalizer.is_sql(file_o.read(self.__sql_limit)):
             # calculate file checksum
             _md5sum = self.md5(file_o)
             # register MD5 sum as "Regular" for non-sql files
