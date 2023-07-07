@@ -848,7 +848,7 @@ class CheckSumsController(object):
             # Try to make it 'FILE' and raise an exception if not found
             _ci_type_r = models.CiTypes.objects.filter(code='FILE').last()
         
-        if not _ci_type:
+        if not _ci_type_r:
             raise ValueError("Invalid CI_TYPE: [%s]" % ci_type)
         else:
             logging.error("Invalid CI_TYPE: [%s], replaced to [FILE]" % ci_type)
