@@ -809,7 +809,7 @@ class CheckSumsController(object):
         file_o.seek(0, 0)
         _inclusion_level_calc_src = inclusion_level_calc
 
-        if not self._is_sql_extension(loc_path, loc_type) and not _normalizer.is_sql(file_o.read(self.__sql_limit)):
+        if not self._is_sql_extension(loc_path, loc_type) or not _normalizer.is_sql(file_o.read(self.__sql_limit)):
             # calculate file checksum
             _md5sum = self.md5(file_o)
             # register MD5 sum as "Regular" for non-sql files
