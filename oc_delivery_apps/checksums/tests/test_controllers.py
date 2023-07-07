@@ -1282,7 +1282,7 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         with unittest.mock.patch("oc_delivery_apps.checksums.controllers.wrapper.PLSQLWrapper", return_value=MockWrapper()) as _x:
             _csc = CheckSumsController()
-            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1", "NXS")
+            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1:sql", "NXS")
             _x.assert_called()
 
         self.assertEqual(models.Files.objects.count(), 2)
