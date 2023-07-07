@@ -931,11 +931,15 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         with self.assertRaises(ValueError):
             # ci_type is not detected - location missing
+            # "FILE" type is missing too
             _csc.register_file_md5(_cs2_t, None, "text/hypertrophed", None, "NXS")
 
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValueError):
             # ci_type is not detected - no regular expression
             _csc.register_file_md5(_cs2_t, None, "text/hypertrophed", "loc:path:3", "NXS")
+
+        # add 'FILE' type to get rid of ValueError in further asserts
+        models.CiTypes(code="FILE", name="A File", is_standard="N", is_deliverable=True).save()
 
         _fr_t2 = _csc.register_file_md5(_cs2_t, None, "text/hypertrophed", "loc:path:2:ext", "NXS")
         self.assertNotEqual(_fr_t2, _fr_t1)
@@ -1087,7 +1091,7 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
         self.assertEqual(_fl_r, models.Files.objects.last())
 
         # No ci_type_sub given
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValueError):
             _csc._register_includes(_arc_tgz_tmp, None, None, 1, False, 0)
 
         # No file record for an archive: try to find out file by file object
