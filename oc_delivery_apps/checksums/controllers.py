@@ -13,6 +13,7 @@ import os
 import posixpath
 import shutil
 import logging
+from oc_cdtapi.NexusAPI import gav_to_path
 
 #BEG: DICTIONARIES
 # specific calculations should be placed here if needed
@@ -237,11 +238,7 @@ class CheckSumsController(object):
         if not self._is_strict_cs_prov(cs_prov):
             return False
 
-        if not ci_type:
-            ci_type = self.ci_type_by_path(location, loc_type)
-
-        # otherwise store all. IS_DELETED will be False by Model.
-        _ci_type = models.CiTypes.objects.filter(code=ci_type).last()
+        _ci_type = self._ci_type_record(ci_type, location, loc_type)
         _loc = None
         _cs = None
 
@@ -356,12 +353,39 @@ class CheckSumsController(object):
 
         return self.add_inclusion(_fl_child, _fl_parent, path)
 
+    def _ci_type_record(self, ci_type, loc_path, loc_type):
+        """
+        Get ci-type record. Try to detect by path given and its location type if not exists.
+        Uses 'ci_type_by_path' first to detect a type if it is not given.
+        Returns a record from database for a type detected, and default one for 'FILE' if detection fails.
+        Raises an exception if record for CI_TYPE does not exist in database.
+        :param str ci_type: type to get record for
+        :param str loc_path: location path for autodetection
+        :param str loc_type: location type code for autodetection
+        :return oc_delivery_apps.checksums.CiTypes: a record for a type given, or autodetected one
+        """
+        if not ci_type:
+            # we are force to autodetect
+            ci_type = self.ci_type_by_path(loc_path, loc_type)
+            logging.debug("Location path: [%s]; Location type: [%s]; Autodetected CI_TYPE: [%s]" % (loc_path, loc_type, ci_type))
+        elif not models.CiTypes.objects.filter(code=ci_type).count():
+            _ci_type = self.ci_type_by_path(loc_path, loc_type)
+            logging.error("CI_TYPE not found: [%s], replaced to [%s]" % (ci_type, _ci_type))
+            ci_type = _ci_type
+
+        _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
+
+        if not _ci_type_r:
+            raise ValueError("CI_TYPE not found: [%s]" % ci_type)
+
+        return _ci_type_r
+
     def ci_type_by_path(self, path, loc_type):
         """
         Get ci-type code by path given and location type. Searches by regexp's in database and returns first CI_TYPE which's regexp path given has met to.
         :param str path: location path
         :param loc_type: location type code
-        :return str: ci-type code, or None if not found
+        :return str: ci-type code, or default 'FILE' if nothing found
         """
 
         if not loc_type:
@@ -604,10 +628,7 @@ class CheckSumsController(object):
         _file_pos = file_o.tell()
         _mime_type = self.mime(file_o)
 
-        if not ci_type:
-            ci_type = self.ci_type_by_path(loc_path, loc_type)
-
-        _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
+        _ci_type_r = self._ci_type_record(ci_type, loc_path, loc_type)
 
         file_o.seek(0, os.SEEK_SET)
         _cs_d = self.get_all_sql_checksums(file_o)
@@ -619,7 +640,7 @@ class CheckSumsController(object):
                 _fl_m_r = self._reg_all_sql_cs_provs(_fl_m_r, _cs_d)
 
         except IntegrityError as _e:
-            logging.exception(_e)
+            logging.debug(repr(_e), exc_info=True)
             _fl_m_r = self.get_file_by_checksums_dict(_cs_d)
 
             if _fl_m_r is None:
@@ -632,7 +653,7 @@ class CheckSumsController(object):
         # check arguments is not needed since they are checked in sub-methods
         # one exception: location and location type have to be set in pair
         if loc_path and not loc_type:
-            raise ValueError("loc_path is specified but loc_type is missing")
+            raise ValueError("'loc_path' is specified but 'loc_type' is missing")
 
         if loc_path: 
             self.add_location(_fl_m_r, loc_path, loc_type, loc_revision)
@@ -732,6 +753,32 @@ class CheckSumsController(object):
                 loc_type, loc_revision, inclusion_level, ci_type_sub, force_recalc, 0)
         return _fl_r
 
+    def _is_sql_extension(self, loc_path, loc_type):
+        """
+        Try to get extension from location path given and check against SQL
+        :param str loc_path: location path
+        :param str loc_type: location type code
+        """
+
+        if not loc_path:
+            logging.error("Empty location path given")
+            return False
+
+        # if location type is NXS (maven) then we have to convert it to path
+        # all other location types assumed to be POSIX-compatible
+        if isinstance(loc_type, str):
+            loc_type = loc_type.upper()
+
+        if loc_type == "NXS":
+            logging.debug("NXS location, converting GAV [%s] to POSIX path" % loc_path)
+            loc_path = gav_to_path(loc_path)
+            logging.debug("GAV converted to path: [%s]" % loc_path)
+
+        _ext = list(posixpath.splitext(loc_path)).pop().lower()
+        logging.debug("Extension is [%s]" % _ext)
+
+        return _ext in [".sql", ".plb"]
+
     def _register_file_obj(self, file_o, ci_type, loc_path, loc_type, loc_revision, inclusion_level, ci_type_sub, force_recalc, inclusion_level_calc):
         """
         Registers file or file-like object in the database. MD5 checksum and MIME-type of the file object will be calculated. 
@@ -761,7 +808,7 @@ class CheckSumsController(object):
         file_o.seek(0, 0)
         _inclusion_level_calc_src = inclusion_level_calc
 
-        if not _normalizer.is_sql(file_o.read(self.__sql_limit)):
+        if not self._is_sql_extension(loc_path, loc_type) or not _normalizer.is_sql(file_o.read(self.__sql_limit)):
             # calculate file checksum
             _md5sum = self.md5(file_o)
             # register MD5 sum as "Regular" for non-sql files
@@ -814,12 +861,10 @@ class CheckSumsController(object):
         # check arguments is not needed since they are checked in sub-methods
         # one exception: location and location type have to be set in pair
         if loc_path and not loc_type:
-            raise ValueError("loc_path is specified but loc_type missing")
+            raise ValueError("'loc_path' is specified but 'loc_type' missing")
 
-        if not ci_type:
-            ci_type = self.ci_type_by_path(loc_path, loc_type)
+        _ci_type_r = self._ci_type_record(ci_type, loc_path, loc_type)
 
-        _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
         _fl_r = None
 
         try:
@@ -1021,7 +1066,7 @@ class CheckSumsController(object):
         """
 
         if step not in list(self.__cs_providers.keys()):
-            raise ValueError("%s not found in providers list" % step)
+            raise ValueError("[%s]: not found in providers list" % step)
 
         _result = dict()
 
@@ -1313,6 +1358,9 @@ class CheckSumsController(object):
             raise ValueError("Version is mandatory")
 
         _citype = models.CiTypes.objects.get(code=ci_type)
+
+        if not _citype:
+            raise ValueError("No documentation CI_TYPE found: [%s]" % ci_type)
 
         if _citype.doc_artifactid:
             return _citype.get_doc_gav(version)

@@ -369,6 +369,14 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
         # NOTE: non-existent CI_TYPE is specified, this is NOT A BUG
         _loctype = models.LocTypes(code="SVN", name="SubVersion")
         _loctype.save()
+
+        # first it should raise an erorr - we do not have 'CODE_TYPE_2" here and "FILE" is missing also
+        with self.assertRaises(ValueError):
+            _cs.add_location_checksum(_cs_t, _pth, "SVN", "CODE_TYPE_2", revision=0)
+
+        # now add the type - error sould disappear
+        _citype = models.CiTypes(code="CODE_TYPE_2", name="Name Two", is_standard="N", is_deliverable=False)
+        _citype.save()
         self.assertTrue(_cs.add_location_checksum(_cs_t, _pth, "SVN", "CODE_TYPE_2", revision=0))
         self.assertEqual(models.Files.objects.count(), 1)
         self.assertEqual(models.Locations.objects.count(), 2)
@@ -382,8 +390,6 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         # store file with another checksum but for existing location
         # file should be added and location overwritten
-        _citype = models.CiTypes(code="CODE_TYPE_2", name="Name Two", is_standard="N", is_deliverable=False)
-        _citype.save()
         _cs_t = "1"*32
         self.assertTrue(_cs.add_location_checksum(_cs_t, _pth, "SVN", "CODE_TYPE_2", revision=0))
         self.assertEqual(models.Files.objects.count(), 2)
@@ -925,11 +931,15 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         with self.assertRaises(ValueError):
             # ci_type is not detected - location missing
+            # "FILE" type is missing too
             _csc.register_file_md5(_cs2_t, None, "text/hypertrophed", None, "NXS")
 
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValueError):
             # ci_type is not detected - no regular expression
             _csc.register_file_md5(_cs2_t, None, "text/hypertrophed", "loc:path:3", "NXS")
+
+        # add 'FILE' type to get rid of ValueError in further asserts
+        models.CiTypes(code="FILE", name="A File", is_standard="N", is_deliverable=True).save()
 
         _fr_t2 = _csc.register_file_md5(_cs2_t, None, "text/hypertrophed", "loc:path:2:ext", "NXS")
         self.assertNotEqual(_fr_t2, _fr_t1)
@@ -1081,7 +1091,7 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
         self.assertEqual(_fl_r, models.Files.objects.last())
 
         # No ci_type_sub given
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValueError):
             _csc._register_includes(_arc_tgz_tmp, None, None, 1, False, 0)
 
         # No file record for an archive: try to find out file by file object
@@ -1206,12 +1216,12 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         with unittest.mock.patch("oc_delivery_apps.checksums.controllers.wrapper.PLSQLWrapper", return_value=MockWrapper()) as _x:
             _csc = CheckSumsController()
-            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1", "NXS")
+            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1:sql", "NXS")
             _x.assert_called()
 
         # check database checksums
         self.assertEqual(models.Locations.objects.count(), 1)
-        self.assertEqual(models.Locations.objects.last().path, "pl.sql.procedure:testproc:1.1.1")
+        self.assertEqual(models.Locations.objects.last().path, "pl.sql.procedure:testproc:1.1.1:sql")
         self.assertEqual(models.Files.objects.count(), 1)
         _fl_r = models.Files.objects.last()
         self.assertEqual(_fl_r.ci_type.code, "CODE_TYPE_1")
@@ -1220,7 +1230,56 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
         self.assertEqual(models.CsProv.objects.count(), 8)
         self.assertEqual(models.CheckSums.objects.filter(file=_fl_r).count(), 4)
 
-        # now add the same file once again and check  no duplicates appended
+        _sql_f.close()
+
+    def test_register_includes__sql_no_ext(self):
+        # prepare one PL/SQL file
+        _sql_c = b"create or replace procedure testproc(testarg in varchar2(100 char)) as t varchar2(100 char); begin t:=testarg.substr(1,0); end;"
+        _wrp_c = b"create or replace procedure testproc(testarg in varchar2(100 char)) wrapped abcdef abcdef abcdef"
+
+        # citype, loctype, cstype
+        _citype = models.CiTypes(code="CODE_TYPE_1", name="Name One", is_standard="N", is_deliverable=False)
+        _citype.save()
+        _loctype_n = models.LocTypes(code="NXS", name="Maven-compatible")
+        _loctype_n.save()
+        _cstype = models.CsTypes(code="MD5", name="MD5")
+        _cstype.save()
+
+        # make sure DB is empty
+        self.assertEqual(models.Files.objects.count(), 0)
+        self.assertEqual(models.Locations.objects.count(), 0)
+        self.assertEqual(models.CheckSums.objects.count(), 0)
+
+        # prepare file
+        _sql_f = tempfile.NamedTemporaryFile(suffix=".trt")
+        _sql_f.write(_sql_c)
+        _sql_f.flush()
+
+        # mock wrapper since we do not have original one
+        class MockWrapper(unittest.mock.MagicMock):
+            def wrap_buf(self, fl_in, write_to):
+                assert(write_to is not None)
+                write_to.write(_wrp_c)
+
+            def unwrap_buf(self, fl_in, write_to):
+                assert(write_to is not None)
+                write_to.write(_sql_c)
+
+        with unittest.mock.patch("oc_delivery_apps.checksums.controllers.wrapper.PLSQLWrapper", return_value=MockWrapper()) as _x:
+            _csc = CheckSumsController()
+            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1", "NXS")
+            _x.assert_not_called()
+
+        # check database checksums
+        self.assertEqual(models.Locations.objects.count(), 1)
+        self.assertEqual(models.Locations.objects.last().path, "pl.sql.procedure:testproc:1.1.1")
+        self.assertEqual(models.Files.objects.count(), 1)
+        _fl_r = models.Files.objects.last()
+        self.assertEqual(_fl_r.ci_type.code, "CODE_TYPE_1")
+        # should be 1 checksum
+        self.assertEqual(models.CsProv.objects.count(), 1)
+        self.assertEqual(models.CheckSums.objects.filter(file=_fl_r).count(), 1)
+
         _sql_f.close()
 
     def test_get_file_by_file_obj(self):
@@ -1272,7 +1331,7 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         with unittest.mock.patch("oc_delivery_apps.checksums.controllers.wrapper.PLSQLWrapper", return_value=MockWrapper()) as _x:
             _csc = CheckSumsController()
-            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1", "NXS")
+            _csc.register_file_obj(_sql_f, "CODE_TYPE_1", "pl.sql.procedure:testproc:1.1.1:sql", "NXS")
             _x.assert_called()
 
         self.assertEqual(models.Files.objects.count(), 2)
@@ -1811,3 +1870,63 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         # this should not confuse us
         self.assertEqual(_csc.get_current_inclusion_depth_calc(_f1), 3)
+
+    def test_ci_type_record(self):
+        # no types in database - should raise ValueError
+        _csc = CheckSumsController()
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', 'path', 'loc')
+
+        # store one type and make sure ValueError is raised
+        _ci_type = models.CiTypes(code="T1", name="T1")
+        _ci_type.save()
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', 'path', 'loc')
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', 'path', 'loc')
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', None, 'loc')
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', 'path', None)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', None, None)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record(None, None, None)
+
+        # legal record
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', 'path', 'loc').code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', 'path', None).code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', None, None).code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', None, 'loc').code)
+
+        # give a 'FILE' type - assert it returned where possible
+        models.CiTypes(code='FILE', name='File').save()
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', 'path', 'loc').code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', 'path', None).code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', None, None).code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', None, 'loc').code)
+        self.assertEqual('FILE', _csc._ci_type_record('T_NONEXIST', 'path', 'loc').code)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('T_NONEXIST', 'path', None)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('T_NONEXIST', None, None)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('T_NONEXIST', None, 'loc')
+
+        # add a regular expression
+        _loc = models.LocTypes(code="LOC", name="Location")
+        _loc.save()
+        models.CiRegExp(regexp='path', loc_type=_loc, ci_type=_ci_type).save()
+
+        self.assertEqual(_ci_type.code, _csc._ci_type_record(None, 'path', 'LOC').code) 
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T_NONEXIST', 'path', 'LOC').code) 
