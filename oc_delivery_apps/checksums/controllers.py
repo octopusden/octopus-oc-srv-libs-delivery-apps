@@ -238,22 +238,7 @@ class CheckSumsController(object):
         if not self._is_strict_cs_prov(cs_prov):
             return False
 
-        if not ci_type:
-            ci_type = self.ci_type_by_path(location, loc_type)
-
-        # otherwise store all. IS_DELETED will be False by Model.
-        _ci_type = models.CiTypes.objects.filter(code=ci_type).last()
-
-        if not _ci_type:
-            # may be wrong type specified by caller.
-            # Try to make it 'FILE' and raise an exception if not found
-            _ci_type = models.CiTypes.objects.filter(code='FILE').last()
-        
-        if not _ci_type:
-            raise ValueError("Invalid CI_TYPE: [%s]" % ci_type)
-        else:
-            logging.error("Invalid CI_TYPE: [%s], replaced to [FILE]" % ci_type)
-
+        _ci_type = self._ci_type_record(ci_type, location, loc_type)
         _loc = None
         _cs = None
 
@@ -368,12 +353,39 @@ class CheckSumsController(object):
 
         return self.add_inclusion(_fl_child, _fl_parent, path)
 
+    def _ci_type_record(self, ci_type, loc_path, loc_type):
+        """
+        Get ci-type record. Try to detect by path given and its location type if not exists.
+        Uses 'ci_type_by_path' first to detect a type if it is not given.
+        Returns a record from database for a type detected, and default one for 'FILE' if detection fails.
+        Raises an exception if record for CI_TYPE does not exist in database.
+        :param str ci_type: type to get record for
+        :param str loc_path: location path for autodetection
+        :param str loc_type: location type code for autodetection
+        :return oc_delivery_apps.checksums.CiTypes: a record for a type given, or autodetected one
+        """
+        if not ci_type:
+            # we are force to autodetect
+            ci_type = self.ci_type_by_path(loc_path, loc_type)
+            logging.debug("Location path: [%s]; Location type: [%s]; Autodetected CI_TYPE: [%s]" % (loc_path, loc_type, ci_type))
+        elif not models.CiTypes.objects.filter(code=ci_type).count():
+            _ci_type = self.ci_type_by_path(loc_path, loc_type)
+            logging.error("CI_TYPE not found: [%s], replaced to [%s]" % (ci_type, _ci_type))
+            ci_type = _ci_type
+
+        _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
+
+        if not _ci_type_r:
+            raise ValueError("CI_TYPE not found: [%s]" % ci_type)
+
+        return _ci_type_r
+
     def ci_type_by_path(self, path, loc_type):
         """
         Get ci-type code by path given and location type. Searches by regexp's in database and returns first CI_TYPE which's regexp path given has met to.
         :param str path: location path
         :param loc_type: location type code
-        :return str: ci-type code, or None if not found
+        :return str: ci-type code, or default 'FILE' if nothing found
         """
 
         if not loc_type:
@@ -616,20 +628,7 @@ class CheckSumsController(object):
         _file_pos = file_o.tell()
         _mime_type = self.mime(file_o)
 
-        if not ci_type:
-            ci_type = self.ci_type_by_path(loc_path, loc_type)
-
-        _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
-
-        if not _ci_type_r:
-            # may be wrong type specified by caller.
-            # Try to make it 'FILE' and raise an exception if not found
-            _ci_type_r = models.CiTypes.objects.filter(code='FILE').last()
-        
-        if not _ci_type_r:
-            raise ValueError("Invalid CI_TYPE: [%s]" % ci_type)
-        else:
-            logging.error("Invalid CI_TYPE: [%s], replaced to [FILE]" % ci_type)
+        _ci_type_r = self._ci_type_record(ci_type, loc_path, loc_type)
 
         file_o.seek(0, os.SEEK_SET)
         _cs_d = self.get_all_sql_checksums(file_o)
@@ -864,20 +863,7 @@ class CheckSumsController(object):
         if loc_path and not loc_type:
             raise ValueError("'loc_path' is specified but 'loc_type' missing")
 
-        if not ci_type:
-            ci_type = self.ci_type_by_path(loc_path, loc_type)
-
-        _ci_type_r = models.CiTypes.objects.filter(code=ci_type).last()
-
-        if not _ci_type_r:
-            # may be wrong type specified by caller.
-            # Try to make it 'FILE' and raise an exception if not found
-            _ci_type_r = models.CiTypes.objects.filter(code='FILE').last()
-        
-        if not _ci_type_r:
-            raise ValueError("Invalid CI_TYPE: [%s]" % ci_type)
-        else:
-            logging.error("Invalid CI_TYPE: [%s], replaced to [FILE]" % ci_type)
+        _ci_type_r = self._ci_type_record(ci_type, loc_path, loc_type)
 
         _fl_r = None
 
