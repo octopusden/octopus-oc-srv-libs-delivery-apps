@@ -1870,3 +1870,63 @@ class CheckSumsControllersTester(django.test.TransactionTestCase):
 
         # this should not confuse us
         self.assertEqual(_csc.get_current_inclusion_depth_calc(_f1), 3)
+
+    def test_ci_type_record(self):
+        # no types in database - should raise ValueError
+        _csc = CheckSumsController()
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', 'path', 'loc')
+
+        # store one type and make sure ValueError is raised
+        _ci_type = models.CiTypes(code="T1", name="T1")
+        _ci_type.save()
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', 'path', 'loc')
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', 'path', 'loc')
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', None, 'loc')
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', 'path', None)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('TYPE', None, None)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record(None, None, None)
+
+        # legal record
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', 'path', 'loc').code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', 'path', None).code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', None, None).code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', None, 'loc').code)
+
+        # give a 'FILE' type - assert it returned where possible
+        models.CiTypes(code='FILE', name='File').save()
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', 'path', 'loc').code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', 'path', None).code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', None, None).code)
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T1', None, 'loc').code)
+        self.assertEqual('FILE', _csc._ci_type_record('T_NONEXIST', 'path', 'loc').code)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('T_NONEXIST', 'path', None)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('T_NONEXIST', None, None)
+
+        with self.assertRaises(ValueError):
+            _csc._ci_type_record('T_NONEXIST', None, 'loc')
+
+        # add a regular expression
+        _loc = models.LocTypes(code="LOC", name="Location")
+        _loc.save()
+        models.CiRegExp(regexp='path', loc_type=_loc, ci_type=_ci_type).save()
+
+        self.assertEqual(_ci_type.code, _csc._ci_type_record(None, 'path', 'LOC').code) 
+        self.assertEqual(_ci_type.code, _csc._ci_type_record('T_NONEXIST', 'path', 'LOC').code) 
