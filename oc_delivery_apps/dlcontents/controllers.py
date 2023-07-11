@@ -659,7 +659,8 @@ class CheckSumsController(object):
         if loc_path and not loc_type:
             raise ValueError("'loc_path' is specified but 'loc_type' is missing")
 
-        if loc_path: 
+        # we should not register 'ARCH' location type here because 'add_inclusion' does this
+        if loc_path and loc_type != 'ARCH': 
             self.add_location(_fl_m_r, loc_path, loc_type, loc_revision)
 
         file_o.seek(_file_pos, 0)
@@ -885,7 +886,6 @@ class CheckSumsController(object):
             self.add_checksum(_fl_r, md5sum, cs_prov=cs_prov)
 
         # here we've got a checksum and file object, so the location question is opened only
-        # call 'add_location_checksum' since it checks for duplicates in contraverse to simple 'add_location'
         # we should not register 'ARCH' location here since 'add_inclusion' shoud do so
         if loc_path and loc_type != 'ARCH':
             # if path and is given then add the location for this file
