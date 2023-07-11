@@ -177,6 +177,9 @@ class CheckSumsController(object):
         :param revision: str or int, revision of an object in VCS (if exist), may be None
         :return: new location object of None if failed
         """
+        if loc_type == 'ARCH':
+            raise ValueError("Can not register location of type 'ARCH' without file_dst. Please use 'add_inclusion'")
+
         location = location.strip()
 
         _loc_type = models.LocTypes.objects.filter(code=loc_type.upper()).last()
@@ -705,7 +708,7 @@ class CheckSumsController(object):
             logging.debug("sub-member: [%d]%s" % (file_r.pk, _pth_utf))
 
             (_file_r_memb, _inclusion_level_t_u) = self._register_file_obj(_file_o_memb, ci_type_sub,
-                    None, None, None, inclusion_level, ci_type_sub, force_recalc, inclusion_level_calc)
+                    _pth_utf, 'ARCH', None, inclusion_level, ci_type_sub, force_recalc, inclusion_level_calc)
             self.add_inclusion(_file_r_memb, file_r, _pth_utf)
             _inclusion_level_t = max(_inclusion_level_t_u, _inclusion_level_t)
             _file_o_memb.close()
@@ -883,9 +886,10 @@ class CheckSumsController(object):
 
         # here we've got a checksum and file object, so the location question is opened only
         # call 'add_location_checksum' since it checks for duplicates in contraverse to simple 'add_location'
-        if loc_path:
+        # we should not register 'ARCH' location here since 'add_inclusion' shoud do so
+        if loc_path and loc_type != 'ARCH':
             # if path and is given then add the location for this file
-            self.add_location(_fl_r, loc_path,loc_type, revision=loc_revision)
+            self.add_location(_fl_r, loc_path, loc_type, revision=loc_revision)
 
         return _fl_r
 
