@@ -149,8 +149,8 @@ class DeliveryListTestSuite(django.test.SimpleTestCase):
         self.assertEqual(["g:a:v"], delivery.mvn_files)
 
     def test_dotted_pathes_parsed(self):
-        dlist = DeliveryList(["./cards", "doc/.", "foo/./bar", "foo/../bar"])
-        self.assertEqual(["cards", "doc", "foo/bar", "bar"], dlist.svn_files)
+        dlist = DeliveryList(["./something", "doc/.", "foo/./bar", "foo/../bar"])
+        self.assertEqual(["something", "doc", "foo/bar", "bar"], dlist.svn_files)
 
     def test_root_path_rejected(self):
         with self.assertRaises(InvalidPathError):
