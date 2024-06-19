@@ -1,0 +1,8 @@
+Dockerfile
+docker-compose.yml
+*/.git/*
+.git*
+*/__pycache__/*
+*/*.py[oc]
+__pycache__
+

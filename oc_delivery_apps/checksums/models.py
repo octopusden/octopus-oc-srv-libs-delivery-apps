@@ -10,16 +10,16 @@ import os
 class CiTypes(models.Model):
     # ID is not needed, added automatically as primary key
     # capital letters code
-    code = models.CharField(max_length=32, blank=False, null=False, unique=True)
+    code = models.CharField(max_length=127, blank=False, null=False, unique=True)
     # display name
-    name = models.CharField(max_length=64, blank=False, null=False, unique=True)
+    name = models.CharField(max_length=511, blank=False, null=False, unique=True)
     # is_standard, default - no
     is_standard = models.CharField(max_length=8, blank=False, null=False, default="N")
     # is deliverable to customers
     is_deliverable = models.BooleanField(default=False)
-    rn_artifactid = models.CharField(max_length=255, blank=True, null=True)
+    rn_artifactid = models.CharField(max_length=1023, blank=True, null=True)
     # artifactid needed for documentation appending
-    doc_artifactid = models.CharField(max_length=255, blank=True, null=True)
+    doc_artifactid = models.CharField(max_length=1023, blank=True, null=True)
 
     def get_rn_gav(self, version):
         """
@@ -61,13 +61,13 @@ class CiTypes(models.Model):
 class CiTypeGroups(models.Model):
     # ID is not needed, added by Django automatically as primary key
     # capital letters code
-    code = models.CharField(max_length=32, blank=False, null=False, unique=True)
+    code = models.CharField(max_length=127, blank=False, null=False, unique=True)
     # display name
-    name = models.CharField(max_length=64, blank=False, null=False)
+    name = models.CharField(max_length=511, blank=False, null=False)
     # Release notes artifactid
-    rn_artifactid = models.CharField(max_length=255, blank=True, null=True)
+    rn_artifactid = models.CharField(max_length=1023, blank=True, null=True)
     # artifactid needed for documentation appending
-    doc_artifactid = models.CharField(max_length=255, blank=True, null=True)
+    doc_artifactid = models.CharField(max_length=1023, blank=True, null=True)
 
     def get_rn_gav(self, version):
         """
